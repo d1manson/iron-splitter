@@ -3,6 +3,7 @@
   "private": true,
   "main": "",
   "dependencies": {
+    "iron-splitter": "JC-Orozco/iron-splitter#master",
     "polymer": "Polymer/polymer#^1.2.0",
     "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior",
     "iron-flex-layout": "PolymerElements/iron-flex-layout"
