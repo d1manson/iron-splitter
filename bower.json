@@ -1,5 +1,6 @@
 {
   "name": "iron-splitter",
+  "version": "1.0.0-rc"
   "private": true,
   "main": "",
   "dependencies": {
