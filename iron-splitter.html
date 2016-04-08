@@ -6,176 +6,171 @@ The complete set of contributors may be found at http://polymer.github.io/CONTRI
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 --><!--
-`iron-splitter` provides a split bar and dragging on the split bar
-will resize the sibling element.  Use its `direction` property to indicate
-which sibling element to be resized and the orientation.  Usually you would want
-to use `iron-splitter` along with flex layout so that the other sibling
-element can be _flexible_.
 
-Example:
+see Readme for example and docs.
 
-    <div horizontal layout>
-      <div>left</div>
-      <iron-splitter direction="left"></iron-splitter>
-      <div flex>right</div>
-    </div>
-
-In the above example, dragging the splitter will resize the _left_ element.  And
-since the parent container is a flexbox and the _right_ element has
-`flex`, the _right_ element will be auto-resized.
-
-For horizontal splitter set `direction` to `up` or `down`.
-
-Example:
-
-    <div vertical layout>
-      <div>top</div>
-      <iron-splitter direction="up"></iron-splitter>
-      <div flex>bottom</div>
-    </div>
-
-@group Polymer Iron Elements
-@element iron-splitter
-@mixins Polymer.IronResizableBehavior https://github.com/PolymerElements/iron-resizable-behavior
-@mixins Polymer.IronResizableBehavior https://github.com/PolymerElements/iron-flex-layout
-@homepage github.io
+TODO: I think it would make a lot more sense to make a container element that 
+manages its contents.
 -->
+
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
+<dom-module id="iron-resize-notifier">
+<template><content></content></template>
+<script>
+  Polymer({
+    is: 'iron-resize-notifier',
+    behaviors: [Polymer.IronResizableBehavior]
+  })
+</script>
+</dom-module>
+
 <dom-module id="iron-splitter">
-  <link rel="import" type="css" href="iron-splitter.css">
-  <template>
-  </template>
-  <script>
-    Polymer({
-      is: 'iron-splitter',
-      behaviors: [Polymer.IronResizableBehavior],
-      properties: {
-        /**
-         * By default the parent and siblings of the splitter are set to overflow hidden. This helps
-         * avoid elements bleeding outside the splitter regions. Set this property to true to allow
-         * these elements to overflow.
-         *
-         * @attribute allowOverflow
-         * @type boolean
-         * @default false
-         */
-        allowOverflow: {
-          type: Boolean,
-          value: false,
-          notify: true
-        },
-        /**
-         * Possible values are `left`, `right`, `up` and `down`.
-         *
-         * @attribute direction
-         * @type string
-         * @default 'left'
-         */
-        direction: {
-          type: String,
-          value: 'left',
-          notify: true,
-          observer: 'directionChanged'
-        },
-        /**
-         * Locks the split bar so it can't be dragged.
-         *
-         * @attribute locked
-         * @type boolean
-         * @default false
-         */
-        locked: {
-          type: Boolean,
-          value: false,
-          notify: true
-        },
-        /**
-         * Minimum width to which the splitter target can be sized, e.g. 
-         * `minSize="100px"`
-         *
-         * @attribute minSize
-         * @type string
-         * @default ''
-         */
-        minSize: {
-          type: String,
-          value: '',
-          notify: true
-        },
-        // Listen for resize requests on parent, since splitter is peer to resizables
-        resizerIsPeer: {
-          type: Boolean,
-          value: true
-        },
-        target: { observer: 'targetChanged' }
+
+<style>
+:host {
+display: block;
+width: 12px;
+background: #efefef url(handle.svg) no-repeat center;
+box-shadow: inset 0 0 2px 1px #ccc;
+cursor: col-resize;
+flex-shrink: 0;
+}
+
+:host(.horizontal) {
+width: auto;
+height: 12px;
+cursor: row-resize;
+background-image: url(handle-h.svg);
+}
+
+:host(:hover, :active) {
+background-color: #ddd;
+}
+</style>
+
+<template></template>
+
+<script>
+Polymer({
+  is: 'iron-splitter',
+  behaviors: [
+    Polymer.IronResizableBehavior
+  ], properties: {
+      allowOverflow: {
+        type: Boolean,
+        value: false,
+        notify: true
       },
-      ready: function () {
-        this.directionChanged();
-        if (!this.allowOverflow) {
-          this.set('parentNode.style.overflow', this.set('nextElementSibling.style.overflow', this.set('previousElementSibling.style.overflow', 'hidden')));
-        }
+      direction: {
+        type: String, // `left`, `right`, `up` or `down`
+        value: 'left',
+        notify: true,
+        observer: '_directionChanged'
       },
-      //attached: function () {
-      //  this.resizerAttachedHandler();
-      //},
-      //detached: function () {
-      //  this.resizerDetachedHandler();
-      //},
-      directionChanged: function () {
-        this.isNext = this.direction === 'right' || this.direction === 'down';
-        this.horizontal = this.direction === 'up' || this.direction === 'down';
-        this.update();
+      locked: {
+        type: Boolean, // Locks the split bar so it can't be dragged.
+        value: false,
+        notify: true
       },
-      update: function () {
-        this.target = this.isNext ? this.nextElementSibling : this.previousElementSibling;
-        this.dimension = this.horizontal ? 'height' : 'width';
-        Polymer.dom(this).classList.toggle('horizontal', this.horizontal);
+      size: {
+        type: String,
+        value: '',
+        notify: true,
+        observer: '_sizeChanged'
       },
-      targetChanged: function (_, old) {
-        if (old) {
-          old.style[old.__splitterMinSize] = '';
-        }
-        var min = this.set('target.__splitterMinSize', this.horizontal ? 'minHeight' : 'minWidth');
-        this.set('target.style' + ('.' + min), this.minSize);
+      minSize: {
+        type: String, // Minimum width to which the splitter target can be sized, e.g. `minSize="100px"`
+        value: '', 
+        notify: true
       },
-      //trackStart: function () {
-      //  this.update();
-      //  this.size = parseInt(getComputedStyle(this.target)[this.dimension]);
-      //},
-      track: function (e) {
-        if (this.locked) {
-          return;
-        }
-        switch(e.detail.state) {
-          case 'start':
-            //this.message = 'Tracking started!';
-            this.update();
-            this.size = parseInt(getComputedStyle(this.target)[this.dimension]);
-            break;
-          case 'track':
-            //console.log(e.detail.x);
-            //this.message = 'Tracking in progress... ' +
-            //  e.detail.x + ', ' + e.detail.y;
-            var d = e.detail[this.horizontal ? 'dy' : 'dx'];
-            this.set('target.style' + ('.' + this.dimension), this.size + (this.isNext ? -d : d) + 'px');
-            this.notifyResize();
-            break;
-          case 'end':
-            //this.message = 'Tracking ended!';
-            break;
-        }
-      },
-      preventSelection: function (e) {
-        //e.preventDefault();
-      },
-      listeners: {
-        //trackstart: 'trackStart',
-        'track': 'track',
-        'down': 'preventSelection'
+      target: { 
+        observer: '_targetChanged',
+        readOnly: true
       }
-    });
-  </script>
+  }, ready: function () {
+    this._directionChanged();
+    if (!this.allowOverflow) {
+      this.set('parentNode.style.overflow', 'hidden');
+      this.set('nextElementSibling.style.overflow', 'hidden');
+      this.set('previousElementSibling.style.overflow', 'hidden');
+    }
+  }, _directionChanged: function () {
+    this._is_next = this.direction === 'right' || this.direction === 'down';
+    this._is_horizontal = this.direction === 'up' || this.direction === 'down';
+    this._update();
+    this.set('size', (parseInt(getComputedStyle(this.target)[this._dimension]) || 0 ) + "px");
+  }, _update: function () {
+    this._setTarget(this._is_next ? this.nextElementSibling : this.previousElementSibling);
+    this._dimension = this._is_horizontal ? 'height' : 'width';
+    let el = Polymer.dom(this).parentNode;
+
+    // The maximum size is given by the height of the parent, minus all the unshrinkable
+    // elements within the parent (for example the splitter itself is unshrinkable).
+    // Note that this is a bit hacky.
+    let max_size = el.getBoundingClientRect()[this._dimension];
+    let range = document.createRange();
+    el = el.firstChild;
+    while(el){
+      if(el === this.target){
+         // we have control over the size of the target
+      } else if (el.getBoundingClientRect){
+        // regular nodes
+        let style = getComputedStyle(el);
+        let is_fixed_size = !parseFloat(style.flexShrink);
+        let is_in_flow = !(style.position  === "absolute" || style.position === "fixed")
+        if(is_fixed_size && is_in_flow){
+           max_size -=  el.getBoundingClientRect()[this._dimension];
+        }
+      } else {
+        // text nodes..
+        range.selectNode(el);
+        max_size -= range.getBoundingClientRect()[this._dimension];
+        range.detach();
+      }
+      el = el.nextSibling;
+    }
+    this._max_size = max_size;
+    Polymer.dom(this).classList.toggle('horizontal', this._is_horizontal);
+  }, _targetChanged: function (_, old) {
+      this.target && this.set('size', this.target.getBoundingClientRect()[this._dimension] + "px");
+  }, _sizeChanged: function(new_val){
+      this.target.style[this._dimension] =  new_val;
+
+      // TODO: is this right?
+      let el = Polymer.dom(this).parentNode.firstChild;
+      while(el){
+        (el !== this) && el.notifyResize && el.notifyResize();
+        el = el.nextSibling;
+      }
+  }, _track: function (e) {
+      if (this.locked) {
+        return;
+      }
+      switch(e.detail.state) {
+        case 'start':
+          this._update();
+          this.size_start = this.target.getBoundingClientRect()[this._dimension];
+          break;
+        case 'track':
+          var d = e.detail[this._is_horizontal ? 'dy' : 'dx'];
+          this.set('size', Math.min(this.size_start + (this._is_next ? -d : d), this._max_size) + 'px');
+          break;
+        case 'end':
+          break;
+      }
+  }, _parent_resized: function(){
+    this._update();
+    this.set('size', Math.min(this.target.getBoundingClientRect()[this._dimension], this._max_size) + 'px');
+  }, _preventSelection: function (e) {
+    
+  }, listeners: {
+    'track': '_track',
+    'down': '_preventSelection',
+    'iron-resize': '_parent_resized'
+  }
+});
+</script>
 </dom-module>
